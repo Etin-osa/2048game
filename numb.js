@@ -8,6 +8,8 @@ let curTiles = []
 // List all keys in keypress
 const keys = [37, 38, 39, 40]
 
+let tt = 0
+
 // Box positions
 let pos1 = 11, pos2 = 117,
   pos3 = 223, pos4 = 329
@@ -24,10 +26,11 @@ const grid = {
 
 
 //  Box Object
-function Cajas(x, y, tile) {
+function Cajas(x, y, add, tile) {
   this.x = x,
     this.y = y,
-    this.tile = tile
+    this.add = add
+  this.tile = tile
 }
 
 
@@ -41,7 +44,7 @@ const store = {
       let cord = this.locale(arr)
 
       // New box
-      let box = new Cajas(cord[0], cord[1], arr)
+      let box = new Cajas(cord[0], cord[1], 0, arr)
 
       // Add to main Board
       cur.push(box)
@@ -149,29 +152,130 @@ const store = {
     }
   },
 
-  action: function (arrs, code) {
-    //let move = this.checkDir(code)
-    //let end = move > 0 ? 329 : 11;
+  details: function (arr, code) {
+    // Get Dir 
+    const dir = this.checkKey(code)
 
-    if (code === keys[0] || code === keys[2]) {
-      for (let arr of arrs) {
-        let lead = arr[this.minOMax(arr, code, 'x')]
-        //let length = this.numOf(move, lead.x, end)
-        console.log(lead)
+    // Get Inc
+    const pace = this.checkDir(code)
+
+    // Get Final
+    const end = pace > 0 ? 329 : 11;
+
+    // Get Min or Max
+    let lead = arr[this.minOMax(arr, code, dir)]
+
+    // Get length to reach end
+    let length = this.numOf(pace, lead[dir], end)
+
+    // Box Kit
+    return { pace, dir, end, length, lead }
+  },
+
+  action: function (doc, arr) {
+    let lead = doc['lead']
+    let length = doc['length']
+    let dir = doc['dir']
+
+    for (var i = 0; i < length; i++) {
+      let nt = []
+
+      for (let each of arr) {
+        if (each !== lead) {
+          if (each[dir] === (lead[dir] + doc['pace'])) { nt.push(each) }
+        }
       }
-    } else if (code === keys[1] || code === keys[3]) {
-      for (let arr of arrs) {
-        let lead = arr[this.minOMax(arr, code, 'y')]
-        //let length = this.numOf(move, lead.y, end)
-        console.log(lead)
+
+      if (nt.length < 1) {
+        // If Next Box is empty
+        // Increment Movement
+        lead[dir] += doc['pace']
+
+        // Check Borders
+        if (lead[dir] > pos4) { lead[dir] = pos4 }
+        if (lead[dir] < pos1) { lead[dir] = pos1 }
+
+        // Move 
+        this.outside(dir, lead)
+      } else {
+        let ntCont = parseFloat(nt[0]['tile'].textContent)
+        let ldCont = parseFloat(lead['tile'].textContent)
+
+        if (ldCont !== ntCont) {
+          // If not same
+          // Re-arrange lead
+          doc['lead'] = nt[0]
+
+          // Re-arrange Length
+          doc['length'] = this.numOf(doc['pace'], doc['lead'][dir], doc['end'])
+
+          // Re-call Action
+          this.action(doc, arr)
+        } else {
+          if (lead['add'] === 0 && nt[0]['add'] === 0) {
+            // If same
+            // Increment Movement
+            lead[dir] += doc['pace']
+
+            // Check Borders
+            if (lead[dir] > pos4) { lead[dir] = pos4 }
+            if (lead[dir] < pos1) { lead[dir] = pos1 }
+
+            // Move 
+            this.outside(dir, lead)
+
+            // Add Up
+            lead['tile'].textContent = ldCont + ntCont
+
+            // Remove From Array
+            arr = arr.filter(each => each !== nt[0]['tile'])
+
+            // Remove NT
+            nt[0]['tile'].remove()
+
+            // Empty nt
+            nt = []
+
+            // Increment Add
+            lead['add'] += 1
+          }
+        }
       }
     }
+  },
+
+  numOf: function (inc, start, end) {
+    let num = 0
+    if (end === 11) {
+      for (var i = start; i > end; i += inc) {
+        num += 1
+      }
+    } else {
+      for (var i = start; i < end; i += inc) {
+        num += 1
+      }
+    }
+
+    return num
+  },
+
+  outside: function (dir, fir) {
+    if (dir === 'x') {
+      fir['tile'].style.left = `${fir.x}px`
+    } else {
+      fir['tile'].style.top = `${fir.y}px`
+    }
+  },
+
+  checkKey: function (key) {
+    if (key === keys[0] || key === keys[2]) { return 'x' }
+    else if (key === keys[1] || key === keys[3]) { return 'y' }
   }
 }
 
 
 // selection box
-let numbs = [2, 2, 2, 2, 2, 2, 4, 2, 2, 2]
+let numbs = [4, 2, 2, 4, 2, 2, 4, 2, 2, 2]
 
 
 //  Listen for Keypress Eevent
@@ -187,8 +291,14 @@ document.addEventListener('keydown', (e) => {
     //  Fill rows & cols
     curTiles = store.green(getTiles, e.keyCode)
 
+    // Filter arr
+    curTiles = curTiles.filter(arr => arr.length > 0)
+
     // Movements
-    store.action(curTiles, e.keyCode)
+    curTiles.forEach(tile => {
+      let files = store.details(tile, e.keyCode)
+      store.action(files, tile)
+    })
   }
 })
 
@@ -220,4 +330,4 @@ function rdm(lgth) {
 
 
 // Begin Game
-start(8)
+start(11)
