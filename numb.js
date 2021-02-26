@@ -8,7 +8,6 @@ let curTiles = []
 // List all keys in keypress
 const keys = [37, 38, 39, 40]
 
-let tt = 0
 
 // Box positions
 let pos1 = 11, pos2 = 117,
