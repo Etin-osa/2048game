@@ -225,6 +225,9 @@ const store = {
 
             // Add Up
             lead['tile'].textContent = ldCont + ntCont
+            
+            // Add Colour
+            lead['tile'].style.background = `${this.colorB(ldCont + ntCont)}`;
 
             // Remove From Array
             arr = arr.filter(each => each !== nt[0]['tile'])
@@ -265,6 +268,20 @@ const store = {
     }
 
     return num
+  },
+
+  colorB: function (val) {
+    if (val == '2') { return '#CA3C25' }
+    else if (val == '4') { return '#F0C977' }
+    else if (val == '8') { return '#99A88C' }
+    else if (val == '16') { return '#2E86AB' }
+    else if (val == '32') { return '#E09F3E' }
+    else if (val == '64') { return '#9E2A2B' }
+    else if (val == '128') { return '#D0823A' }
+    else if (val == '256') { return '#791B1D' }
+    else if (val == '512') { return '#BF6535' }
+    else if (val == '1024') { return '#540B0E' }
+    else if (val == '2048') { return '#335C67' }
   },
 
   outside: function (dir, fir) {
@@ -325,6 +342,9 @@ function start(numOf) {
 
     // Append child
     gHead[rand].appendChild(div)
+
+    // Add Colour
+    div.style.background = `${store.colorB(div.textContent)}`
 
     // Filter Parent
     gHead = gHead.filter((cur, ind) => ind !== rand)

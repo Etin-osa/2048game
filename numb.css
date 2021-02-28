@@ -89,5 +89,6 @@ body {
   font-size: 40px;
   font-weight: bolder;
   text-align: center;
-  transition: all .7s ease;
+  transition: top .7s ease,
+              left .7s ease;
 }
