@@ -99,24 +99,17 @@ const store = {
   green: function (arrs, code) {
     let col1 = [], col2 = [],
       col3 = [], col4 = [];
+    
+    let dir = ''
 
+    if (code === keys[0] || code === keys[2]) { dir = 'y' } // Horizontal Movement
+    else if (code === keys[1] || code === keys[3]) { dir = 'x' } // Vertical Movement
 
-    //  For Horizontal Movement
-    if (code === keys[0] || code === keys[2]) {
-      for (let arr of arrs) {
-        if (arr.y === pos1) { col1.push(arr) }
-        else if (arr.y === pos2) { col2.push(arr) }
-        else if (arr.y === pos3) { col3.push(arr) }
-        else if (arr.y === pos4) { col4.push(arr) }
-      }
-    } else if (code === keys[1] || code === keys[3]) {
-      //  For Vertical Movement  
-      for (let arr of arrs) {
-        if (arr.x === pos1) { col1.push(arr) }
-        else if (arr.x === pos2) { col2.push(arr) }
-        else if (arr.x === pos3) { col3.push(arr) }
-        else if (arr.x === pos4) { col4.push(arr) }
-      }
+    for (let arr of arrs) {
+      if (arr[dir] === pos1) { col1.push(arr) }
+      else if (arr[dir] === pos2) { col2.push(arr) }
+      else if (arr[dir] === pos3) { col3.push(arr) }
+      else if (arr[dir] === pos4) { col4.push(arr) }
     }
 
     return [col1, col2, col3, col4]
