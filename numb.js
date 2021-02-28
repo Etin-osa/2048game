@@ -237,6 +237,15 @@ const store = {
 
             // Increment Add
             lead['add'] += 1
+          } else if (nt[0]['add'] === 0) {
+            // Re-arrange lead
+            doc['lead'] = nt[0]
+
+            // Re-arrange Length
+            doc['length'] = this.numOf(doc['pace'], doc['lead'][dir], doc['end'])
+
+            // Re-call Action
+            this.action(doc, arr)
           }
         }
       }
@@ -329,4 +338,4 @@ function rdm(lgth) {
 
 
 // Begin Game
-start(11)
+start(14)
