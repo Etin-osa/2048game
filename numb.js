@@ -27,8 +27,8 @@ const grid = {
 //  Box Object
 function Cajas(x, y, add, tile) {
   this.x = x,
-    this.y = y,
-    this.add = add
+  this.y = y,
+  this.add = add
   this.tile = tile
 }
 
@@ -164,105 +164,6 @@ const store = {
     return { pace, dir, end, length, lead }
   },
 
-  action: function (doc, arr) {
-    let lead = doc['lead']
-    let length = doc['length']
-    let dir = doc['dir']
-
-    for (var i = 0; i < length; i++) {
-      let nt = []
-
-      for (let each of arr) {
-        if (each !== lead) {
-          if (each[dir] === (lead[dir] + doc['pace'])) { nt.push(each) }
-        }
-      }
-
-      if (nt.length < 1) {
-        // If Next Box is empty
-        // Increment Movement
-        lead[dir] += doc['pace']
-
-        // Check Borders
-        if (lead[dir] > pos4) { lead[dir] = pos4 }
-        if (lead[dir] < pos1) { lead[dir] = pos1 }
-
-        // Move 
-        this.outside(dir, lead)
-      } else {
-        let ntCont = parseFloat(nt[0]['tile'].textContent)
-        let ldCont = parseFloat(lead['tile'].textContent)
-
-        if (ldCont !== ntCont) {
-          // If not same
-          // Re-arrange lead
-          doc['lead'] = nt[0]
-
-          // Re-arrange Length
-          doc['length'] = this.numOf(doc['pace'], doc['lead'][dir], doc['end'])
-
-          // Re-call Action
-          this.action(doc, arr)
-        } else {
-          if (lead['add'] === 0 && nt[0]['add'] === 0) {
-            // If same
-            // Increment Movement
-            lead[dir] += doc['pace']
-
-            // Check Borders
-            if (lead[dir] > pos4) { lead[dir] = pos4 }
-            if (lead[dir] < pos1) { lead[dir] = pos1 }
-
-            // Move 
-            this.outside(dir, lead)
-
-            // Add Up
-            lead['tile'].textContent = ldCont + ntCont
-            
-            // Add Colour
-            lead['tile'].style.background = `${this.colorB(ldCont + ntCont)}`;
-
-            // Remove From Array
-            arr = arr.filter(each => each !== nt[0]['tile'])
-
-            // Remove NT
-            nt[0]['tile'].remove()
-
-            // Empty nt
-            nt = []
-
-            // Increment Add
-            lead['add'] += 1
-          } else if (nt[0]['add'] === 0) {
-            // Re-arrange lead
-            doc['lead'] = nt[0]
-
-            // Re-arrange Length
-            doc['length'] = this.numOf(doc['pace'], doc['lead'][dir], doc['end'])
-
-            // Re-call Action
-            this.action(doc, arr)
-          }
-        }
-      }
-    }
-  },
-
-  numOf: function (inc, start, end) {
-    let num = 0
-    if (end === 11) {
-      for (var i = start; i > end; i += inc) {
-        num += 1
-      }
-    } else {
-      for (var i = start; i < end; i += inc) {
-        num += 1
-      }
-    }
-
-    return num
-  },
-
   colorB: function (val) {
     if (val == '2') { return '#CA3C25' }
     else if (val == '4') { return '#F0C977' }
@@ -285,9 +186,148 @@ const store = {
     }
   },
 
+  numOf: function (inc, start, end) {
+    let num = 0
+    if (end === 11) {
+      for (var i = start; i > end; i += inc) {
+        num += 1
+      }
+    } else {
+      for (var i = start; i < end; i += inc) {
+        num += 1
+      }
+    }
+
+    return num
+  },
+
+  getAhead: function (lead, dir, arr, doc) {
+    for (let each of arr) {
+      if (each !== lead) {
+        if (doc['end'] === 11) {
+          if (each[dir] > lead[dir]) {
+            // Re-arrange Doc
+            each[dir] += doc['pace']
+
+            // Re-arrange Length
+            this.outside(dir, each)
+          }
+        } else {
+          if (each[dir] < lead[dir]) {
+            // Re-arrange Doc
+            each[dir] += doc['pace']
+
+            // Re-arrange Length
+            this.outside(dir, each)
+          }
+        }
+      }
+    }
+  },
+
   checkKey: function (key) {
     if (key === keys[0] || key === keys[2]) { return 'x' }
     else if (key === keys[1] || key === keys[3]) { return 'y' }
+  }
+}
+
+
+const action = function (doc, arr) {
+  let lead = doc['lead']
+  let dir = doc['dir']
+  let nt = []
+
+  // Look At Next Step
+  for (let each of arr) {
+    if (each !== lead) {
+      if (each[dir] === (lead[dir] + doc['pace'])) { nt.push(each) }
+    }
+  }
+
+  // Movement
+  if (doc['length'] > 0) {
+    if (nt.length < 1) {
+      // If Next Box is empty
+      // Increment Movement
+      lead[dir] += doc['pace']
+
+      // Check Borders
+      if (lead[dir] > pos4) { lead[dir] = pos4 }
+      if (lead[dir] < pos1) { lead[dir] = pos1 }
+
+      // Move 
+      store.outside(dir, lead)
+
+      // Drag Boxes Behind
+      store.getAhead(lead, dir, arr, doc)
+
+      // Reduce Length
+      doc['length'] -= 1
+
+      // Re-call Function
+      action(doc, arr)
+    } else {
+      let ntNumb = parseFloat(nt[0]['tile'].textContent)
+      let ldNumb = parseFloat(lead['tile'].textContent)
+
+      if (ldNumb !== ntNumb) {
+        // If Not the same
+        // Change Lead
+        doc['lead'] = nt[0]
+
+        // Reduce Length
+        doc['length'] -= 1
+
+        // Re-call Function
+        action(doc, arr)
+      } else {
+        if (lead['add'] === 0 && nt[0]['add'] === 0) {
+          // Increment Movement
+          lead[dir] += doc['pace']
+
+          // Check Borders
+          if (lead[dir] > pos4) { lead[dir] = pos4 }
+          if (lead[dir] < pos1) { lead[dir] = pos1 }
+
+          // Move
+          store.outside(dir, lead)
+
+          // Add Up
+          lead['tile'].textContent = ldNumb + ntNumb
+
+          // Add Colour
+          lead['tile'].style.background = `${store.colorB(ldNumb + ntNumb)}`;
+
+          // Remove From Array
+          arr = arr.filter(each => each !== nt[0])
+
+          // Remove NT
+          nt[0]['tile'].remove()
+
+          // Increment Add
+          lead['add'] += 1
+
+          // Drag Boxes Behind
+          store.getAhead(lead, dir, arr, doc)
+
+          // Reduce Length
+          doc['length'] -= 1
+
+          // Re-call Function
+          action(doc, arr)
+        } else if (nt[0]['add'] === 0) {
+          // If lead has already being added 
+          // Re-arrange lead
+          doc['lead'] = nt[0]
+
+          // Reduce Length
+          doc['length'] -= 1
+
+          // Re-call Action
+          action(doc, arr)
+        }
+      }
+    }
   }
 }
 
@@ -315,7 +355,9 @@ document.addEventListener('keydown', (e) => {
     // Movements
     curTiles.forEach(tile => {
       let files = store.details(tile, e.keyCode)
-      store.action(files, tile)
+      
+      // Move The Boxes
+      action(files, tile)
     })
   }
 })
