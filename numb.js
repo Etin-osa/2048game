@@ -135,10 +135,10 @@ const store = {
       nums.push(obj[dir])
     }
 
-    if (key === keys[0] || key === keys[1]) {
+    if (key === keys[2] || key === keys[3]) {
       let first = Math.max(...nums)
       return nums.indexOf(first)
-    } else if (key === keys[2] || key === keys[3]) {
+    } else if (key === keys[0] || key === keys[1]) {
       let first = Math.min(...nums)
       return nums.indexOf(first)
     }
@@ -161,7 +161,7 @@ const store = {
     let length = this.numOf(pace, lead[dir], end)
 
     // Box Kit
-    return { pace, dir, end, length, lead }
+    return { lead, dir, end, length, pace }
   },
 
   colorB: function (val) {
@@ -201,28 +201,24 @@ const store = {
     return num
   },
 
-  getAhead: function (lead, dir, arr, doc) {
+  moveAlong: function (lead, dir, arr, doc) {
+    let arrOfEach = []
+
     for (let each of arr) {
       if (each !== lead) {
         if (doc['end'] === 11) {
-          if (each[dir] > lead[dir]) {
-            // Re-arrange Doc
-            each[dir] += doc['pace']
-
-            // Re-arrange Length
-            this.outside(dir, each)
+          if (each[dir] > (lead[dir] - doc['pace'])) {
+            arrOfEach.push(each)
           }
         } else {
-          if (each[dir] < lead[dir]) {
-            // Re-arrange Doc
-            each[dir] += doc['pace']
-
-            // Re-arrange Length
-            this.outside(dir, each)
+          if (each[dir] < (lead[dir] + doc['pace'])) {
+            arrOfEach.push(each)
           }
         }
       }
     }
+
+    return arrOfEach
   },
 
   checkKey: function (key) {
@@ -233,39 +229,51 @@ const store = {
 
 
 const action = function (doc, arr) {
-  let lead = doc['lead']
-  let dir = doc['dir']
+  let { lead, dir } = doc
   let nt = []
+  let backArr = []
 
-  // Look At Next Step
-  for (let each of arr) {
-    if (each !== lead) {
-      if (each[dir] === (lead[dir] + doc['pace'])) { nt.push(each) }
-    }
-  }
-
-  // Movement
   if (doc['length'] > 0) {
-    if (nt.length < 1) {
-      // If Next Box is empty
-      // Increment Movement
-      lead[dir] += doc['pace']
+    // If Lead is not at End
+    // Increment Movement
+    lead[dir] += doc['pace']
 
-      // Check Borders
-      if (lead[dir] > pos4) { lead[dir] = pos4 }
-      if (lead[dir] < pos1) { lead[dir] = pos1 }
+    // Check Borders
+    if (lead[dir] > pos4) { lead[dir] = pos4 }
+    if (lead[dir] < pos1) { lead[dir] = pos1 }
 
-      // Move 
-      store.outside(dir, lead)
+    // Move 
+    store.outside(dir, lead)
 
-      // Drag Boxes Behind
-      store.getAhead(lead, dir, arr, doc)
+    // Reduce Length
+    doc['length'] -= 1
 
-      // Reduce Length
-      doc['length'] -= 1
+    // Re-call Function
+    action(doc, arr)
+  } else {
+    for (let each of arr) {
+      if (each !== lead) {
+        if (each[dir] === (lead[dir] - doc['pace'])) { nt.push(each) }
+      }
+    }
 
-      // Re-call Function
-      action(doc, arr)
+    // If the box behind is empty
+    if (nt.length === 0) {
+      backArr = store.moveAlong(lead, dir, arr, doc)
+
+      // If they are boxes behind
+      if (backArr.length > 0) {
+        backArr.forEach(tile => {
+          // Increment Movement
+          tile[dir] += doc['pace']
+
+          // Move 
+          store.outside(dir, tile)
+        })
+
+        // Re-call Function
+        action(doc, arr)
+      }
     } else {
       let ntNumb = parseFloat(nt[0]['tile'].textContent)
       let ldNumb = parseFloat(lead['tile'].textContent)
@@ -275,22 +283,19 @@ const action = function (doc, arr) {
         // Change Lead
         doc['lead'] = nt[0]
 
-        // Reduce Length
-        doc['length'] -= 1
-
         // Re-call Function
         action(doc, arr)
       } else {
         if (lead['add'] === 0 && nt[0]['add'] === 0) {
           // Increment Movement
-          lead[dir] += doc['pace']
+          nt[0][dir] += doc['pace']
 
           // Check Borders
-          if (lead[dir] > pos4) { lead[dir] = pos4 }
-          if (lead[dir] < pos1) { lead[dir] = pos1 }
+          if (nt[0][dir] > pos4) { nt[0][dir] = pos4 }
+          if (nt[0][dir] < pos1) { nt[0][dir] = pos1 }
 
           // Move
-          store.outside(dir, lead)
+          store.outside(dir, nt[0])
 
           // Add Up
           lead['tile'].textContent = ldNumb + ntNumb
@@ -307,23 +312,13 @@ const action = function (doc, arr) {
           // Increment Add
           lead['add'] += 1
 
-          // Drag Boxes Behind
-          store.getAhead(lead, dir, arr, doc)
-
-          // Reduce Length
-          doc['length'] -= 1
-
           // Re-call Function
           action(doc, arr)
         } else if (nt[0]['add'] === 0) {
-          // If lead has already being added 
-          // Re-arrange lead
+          // Change Lead
           doc['lead'] = nt[0]
 
-          // Reduce Length
-          doc['length'] -= 1
-
-          // Re-call Action
+          // Re-call Function
           action(doc, arr)
         }
       }
@@ -355,6 +350,8 @@ document.addEventListener('keydown', (e) => {
     // Movements
     curTiles.forEach(tile => {
       let files = store.details(tile, e.keyCode)
+
+      //console.log(files)
       
       // Move The Boxes
       action(files, tile)
