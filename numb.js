@@ -5,6 +5,9 @@ const gameHead = Array.from(document.querySelectorAll('.gameTile'))
 // Main Board
 let curTiles = []
 
+// Free Board
+let eptTile = []
+
 // List all keys in keypress
 const keys = [37, 38, 39, 40]
 
@@ -35,25 +38,8 @@ function Cajas(x, y, add, tile) {
 
 //  Function store
 const store = {
-  objTiles: function (arrs) {
-    let cur = []
-
-    for (let arr of arrs) {
-      // Get x & y of tile
-      let cord = this.locale(arr)
-
-      // New box
-      let box = new Cajas(cord[0], cord[1], 0, arr)
-
-      // Add to main Board
-      cur.push(box)
-    }
-
-    return cur
-  },
-
-  locale: function (arr) {
-    let node = arr.parentNode
+  locale: function (cur) {
+    let node = cur.parentNode
     let nodeNumb = undefined
     let row = undefined
     let col = undefined
@@ -62,7 +48,6 @@ const store = {
     gameHead.forEach((tile, ind) => {
       if (tile === node) nodeNumb = ind
     })
-
 
     //  Get row
     if (nodeNumb >= 0 && nodeNumb <= 3) {
@@ -80,16 +65,18 @@ const store = {
     }
 
     // Check for x & y
-    let x = parseInt(getComputedStyle(arr).left)
-    let y = parseInt(getComputedStyle(arr).top)
+    let x = parseInt(getComputedStyle(cur).left)
+    let y = parseInt(getComputedStyle(cur).top)
 
     if (x !== 0 && y !== 0) { return [x, y] } else {
       if (x === 0) {
         x = grid.left + (col * grid.w) + (col * grid.gap)
+        cur.style.left = `${x}px`
       }
 
       if (y === 0) {
         y = grid.top + (row * grid.h) + (row * grid.gap)
+        cur.style.top = `${y}px`
       }
 
       return [x, y]
@@ -99,7 +86,7 @@ const store = {
   green: function (arrs, code) {
     let col1 = [], col2 = [],
       col3 = [], col4 = [];
-    
+
     let dir = ''
 
     if (code === keys[0] || code === keys[2]) { dir = 'y' } // Horizontal Movement
@@ -267,6 +254,10 @@ const action = function (doc, arr) {
           // Increment Movement
           tile[dir] += doc['pace']
 
+          // Check Borders
+          if (tile[dir] > pos4) { tile[dir] = pos4 }
+          if (tile[dir] < pos1) { tile[dir] = pos1 }
+
           // Move 
           store.outside(dir, tile)
         })
@@ -339,7 +330,16 @@ document.addEventListener('keydown', (e) => {
     let tiles = Array.from(document.querySelectorAll('.gameTile-jr'))
 
     //  Get objs tiles 
-    let getTiles = store.objTiles(tiles)
+    let getTiles = tiles.map(tile => {
+      // Get x & y of tile
+      let cord = store.locale(tile)
+
+      // New box
+      let box = new Cajas(cord[0], cord[1], 0, tile)
+
+      // Add to main Board
+      return box
+    })
 
     //  Fill rows & cols
     curTiles = store.green(getTiles, e.keyCode)
@@ -351,8 +351,6 @@ document.addEventListener('keydown', (e) => {
     curTiles.forEach(tile => {
       let files = store.details(tile, e.keyCode)
 
-      //console.log(files)
-      
       // Move The Boxes
       action(files, tile)
     })
@@ -378,6 +376,9 @@ function start(numOf) {
     // Add Colour
     div.style.background = `${store.colorB(div.textContent)}`
 
+    // Arrange Element
+    store.locale(div)
+
     // Filter Parent
     gHead = gHead.filter((cur, ind) => ind !== rand)
   }
@@ -390,4 +391,4 @@ function rdm(lgth) {
 
 
 // Begin Game
-start(14)
+start(10)
