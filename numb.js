@@ -8,6 +8,9 @@ let curTiles = []
 // Free Board
 let eptTile = []
 
+// Notice Movement
+let movement = 0
+
 // List all keys in keypress
 const keys = [37, 38, 39, 40]
 
@@ -100,6 +103,35 @@ const store = {
     }
 
     return [col1, col2, col3, col4]
+  },
+
+  createBox: function (arr) {
+    let { row, col } = arr[rdm(arr.length)]
+    let arrHead = undefined
+
+    // To get row
+    if (row === 0) { arrHead = gameHead.slice(0, 4) } 
+    else if (row === 1) { arrHead = gameHead.slice(4, 8) }
+    else if (row === 2) { arrHead = gameHead.slice(8, 12) }
+    else if (row === 3) { arrHead = gameHead.slice(12, 16) }
+    
+
+    // To get Column
+    let parent = arrHead[col]
+    
+    // Creating Div
+    let div = document.createElement('div')
+    div.classList.add('gameTile-jr')
+    div.textContent = numbs[rdm(numbs.length)]
+
+    // Append child
+    parent.appendChild(div)
+
+    // Add Colour
+    div.style.background = `${this.colorB(div.textContent)}`
+
+    // Arrange Element
+    this.locale(div)
   },
 
   checkDir: function (cd) {
@@ -215,10 +247,11 @@ const store = {
 }
 
 
-const action = function (doc, arr) {
-  let { lead, dir } = doc
-  let nt = []
-  let backArr = []
+const action = function (doc, arr, id) {
+  let { lead, dir } = doc;
+  let curID = id;
+  let nt = [];
+  let backArr = [];
 
   if (doc['length'] > 0) {
     // If Lead is not at End
@@ -235,8 +268,11 @@ const action = function (doc, arr) {
     // Reduce Length
     doc['length'] -= 1
 
+    // Increase Movement
+    movement += 1
+
     // Re-call Function
-    action(doc, arr)
+    action(doc, arr, curID)
   } else {
     for (let each of arr) {
       if (each !== lead) {
@@ -262,8 +298,51 @@ const action = function (doc, arr) {
           store.outside(dir, tile)
         })
 
+        // Increase Movement
+        movement += 1
+
         // Re-call Function
-        action(doc, arr)
+        action(doc, arr, curID)
+      } else {
+        let arrNom = 4
+        let start = doc['end'] === 11 ? arr.length :  arrNom - arr.length
+        let end = doc['end'] === 11 ? 4 : 0
+
+        if (doc['end'] === 11) {
+          for (var i = start; i < end; i++) { 
+            let subGrid = {
+              row: undefined,
+              col: undefined,
+            }
+
+            if (dir === 'y') { 
+              subGrid.col = curID 
+              subGrid.row = i
+            } else { 
+              subGrid.row = curID 
+              subGrid.col = i
+            }
+
+            eptTile.push(subGrid)
+          } 
+        } else {
+          for (var i = start; i > end; i--) { 
+            let subGrid = {
+              row: undefined,
+              col: undefined,
+            }
+
+            if (dir === 'y') {
+              subGrid.col = curID
+              subGrid.row = i - 1
+            } else {
+              subGrid.row = curID
+              subGrid.col = i - 1
+            }
+
+            eptTile.push(subGrid)
+          }
+        }
       }
     } else {
       let ntNumb = parseFloat(nt[0]['tile'].textContent)
@@ -275,7 +354,7 @@ const action = function (doc, arr) {
         doc['lead'] = nt[0]
 
         // Re-call Function
-        action(doc, arr)
+        action(doc, arr, curID)
       } else {
         if (lead['add'] === 0 && nt[0]['add'] === 0) {
           // Increment Movement
@@ -303,14 +382,17 @@ const action = function (doc, arr) {
           // Increment Add
           lead['add'] += 1
 
+          // Increase Movement
+          movement += 1
+
           // Re-call Function
-          action(doc, arr)
+          action(doc, arr, curID)
         } else if (nt[0]['add'] === 0) {
           // Change Lead
           doc['lead'] = nt[0]
 
           // Re-call Function
-          action(doc, arr)
+          action(doc, arr, curID)
         }
       }
     }
@@ -319,7 +401,7 @@ const action = function (doc, arr) {
 
 
 // selection box
-let numbs = [4, 2, 2, 4, 2, 2, 4, 2, 2, 2]
+let numbs = [2, 2, 2, 2, 2, 2, 4, 2, 2, 2]
 
 
 //  Listen for Keypress Eevent
@@ -328,6 +410,12 @@ document.addEventListener('keydown', (e) => {
 
     //  Game Tiles
     let tiles = Array.from(document.querySelectorAll('.gameTile-jr'))
+
+    // Empty Free Array
+    eptTile = [];
+
+    // Empty movement
+    movement = 0
 
     //  Get objs tiles 
     let getTiles = tiles.map(tile => {
@@ -344,16 +432,43 @@ document.addEventListener('keydown', (e) => {
     //  Fill rows & cols
     curTiles = store.green(getTiles, e.keyCode)
 
-    // Filter arr
-    curTiles = curTiles.filter(arr => arr.length > 0)
-
     // Movements
-    curTiles.forEach(tile => {
-      let files = store.details(tile, e.keyCode)
+    curTiles.forEach((tile, ind) => {
+      if (tile.length > 0) {
+        // Get files
+        let files = store.details(tile, e.keyCode)
+  
+        // Move The Boxes
+        action(files, tile, ind)
+      } else {
+        let arrNom = 4
+        for (var i = 0; i < arrNom; i++) {
+          let subGrid = {
+            row: undefined,
+            col: undefined
+          }
+          let dir = store.checkKey(e.keyCode)
 
-      // Move The Boxes
-      action(files, tile)
+          if (dir === 'y') {
+            subGrid.col = ind
+            subGrid.row = i
+          } else {
+            subGrid.row = ind
+            subGrid.col = i
+          }
+
+          eptTile.push(subGrid)
+          eptTile.push(subGrid)
+        }
+      }
     })
+
+    // Create New Boxes
+    if (movement !== 0) {
+      setTimeout(() => {
+        store.createBox(eptTile)
+      }, 500);
+    }
   }
 })
 
@@ -391,4 +506,4 @@ function rdm(lgth) {
 
 
 // Begin Game
-start(10)
+start(2)
