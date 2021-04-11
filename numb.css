@@ -90,6 +90,22 @@ body {
   font-size: 40px;
   font-weight: bolder;
   text-align: center;
-  transition: top .2s ease,
-              left .2s ease;
+  transform: scale(0);
+  transition: transform .1s linear,
+              top 0s ease,
+              left 0s ease;
+}
+
+
+
+/* Add */
+.addAnime {
+  animation: upScale .2s linear 1 backwards;
+}
+
+
+@keyframes upScale {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }

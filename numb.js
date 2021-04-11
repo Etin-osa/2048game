@@ -1,4 +1,3 @@
-
 //  Get Parent Element
 const gameHead = Array.from(document.querySelectorAll('.gameTile'))
 
@@ -8,8 +7,14 @@ let curTiles = []
 // Free Board
 let eptTile = []
 
+// selection box
+let numbs = [2, 2, 2, 2, 2, 2, 4, 2, 2, 2]
+
 // Notice Movement
 let movement = 0
+
+// Notice count
+let count = 0
 
 // List all keys in keypress
 const keys = [37, 38, 39, 40]
@@ -33,10 +38,32 @@ const grid = {
 //  Box Object
 function Cajas(x, y, add, tile) {
   this.x = x,
-  this.y = y,
-  this.add = add
+    this.y = y,
+    this.add = add
   this.tile = tile
 }
+
+
+// Create Empty Boxes
+function eptLoop() {
+  for (var i = 0; i < 4; i++) {
+    let eptGrid = {
+      row: count,
+      col: i,
+    }
+
+    eptTile.push(eptGrid)
+  }
+
+  if (count < 3) {
+    count++
+    eptLoop()
+  }
+}
+
+
+// Get Empty Boxes
+eptLoop()
 
 
 //  Function store
@@ -105,35 +132,6 @@ const store = {
     return [col1, col2, col3, col4]
   },
 
-  createBox: function (arr) {
-    let { row, col } = arr[rdm(arr.length)]
-    let arrHead = undefined
-
-    // To get row
-    if (row === 0) { arrHead = gameHead.slice(0, 4) } 
-    else if (row === 1) { arrHead = gameHead.slice(4, 8) }
-    else if (row === 2) { arrHead = gameHead.slice(8, 12) }
-    else if (row === 3) { arrHead = gameHead.slice(12, 16) }
-    
-
-    // To get Column
-    let parent = arrHead[col]
-    
-    // Creating Div
-    let div = document.createElement('div')
-    div.classList.add('gameTile-jr')
-    div.textContent = numbs[rdm(numbs.length)]
-
-    // Append child
-    parent.appendChild(div)
-
-    // Add Colour
-    div.style.background = `${this.colorB(div.textContent)}`
-
-    // Arrange Element
-    this.locale(div)
-  },
-
   checkDir: function (cd) {
     let mv = 0
 
@@ -197,7 +195,17 @@ const store = {
     else if (val == '2048') { return '#335C67' }
   },
 
-  outside: function (dir, fir) {
+  remAnime: function() {
+    let gameJr = Array.from(document.querySelectorAll('.gameTile-jr'))
+
+    // Remove all Anime
+    gameJr.forEach(game => game.classList.remove('addAnime'))
+  },
+
+  moveT: function (dir, fir) {
+    // Add transition to movement
+    fir['tile'].style.transitionDuration = '.2s'
+
     if (dir === 'x') {
       fir['tile'].style.left = `${fir.x}px`
     } else {
@@ -218,26 +226,6 @@ const store = {
     }
 
     return num
-  },
-
-  moveAlong: function (lead, dir, arr, doc) {
-    let arrOfEach = []
-
-    for (let each of arr) {
-      if (each !== lead) {
-        if (doc['end'] === 11) {
-          if (each[dir] > (lead[dir] - doc['pace'])) {
-            arrOfEach.push(each)
-          }
-        } else {
-          if (each[dir] < (lead[dir] + doc['pace'])) {
-            arrOfEach.push(each)
-          }
-        }
-      }
-    }
-
-    return arrOfEach
   },
 
   checkKey: function (key) {
@@ -263,7 +251,7 @@ const action = function (doc, arr, id) {
     if (lead[dir] < pos1) { lead[dir] = pos1 }
 
     // Move 
-    store.outside(dir, lead)
+    store.moveT(dir, lead)
 
     // Reduce Length
     doc['length'] -= 1
@@ -276,14 +264,25 @@ const action = function (doc, arr, id) {
   } else {
     for (let each of arr) {
       if (each !== lead) {
+        
+        // If any block is right next to the lead
         if (each[dir] === (lead[dir] - doc['pace'])) { nt.push(each) }
+
+        // Blocks behind the lead
+        if (doc['end'] === 11) {
+          if (each[dir] > (lead[dir] - doc['pace'])) {
+            backArr.push(each)
+          }
+        } else {
+          if (each[dir] < (lead[dir] + doc['pace'])) {
+            backArr.push(each)
+          }
+        }
       }
     }
 
     // If the box behind is empty
     if (nt.length === 0) {
-      backArr = store.moveAlong(lead, dir, arr, doc)
-
       // If they are boxes behind
       if (backArr.length > 0) {
         backArr.forEach(tile => {
@@ -295,7 +294,7 @@ const action = function (doc, arr, id) {
           if (tile[dir] < pos1) { tile[dir] = pos1 }
 
           // Move 
-          store.outside(dir, tile)
+          store.moveT(dir, tile)
         })
 
         // Increase Movement
@@ -305,42 +304,26 @@ const action = function (doc, arr, id) {
         action(doc, arr, curID)
       } else {
         let arrNom = 4
-        let start = doc['end'] === 11 ? arr.length :  arrNom - arr.length
+        let start = doc['end'] === 11 ? arr.length : arrNom - arr.length
         let end = doc['end'] === 11 ? 4 : 0
 
         if (doc['end'] === 11) {
-          for (var i = start; i < end; i++) { 
-            let subGrid = {
-              row: undefined,
-              col: undefined,
-            }
+          for (var i = start; i < end; i++) {
+            let eptGrid = { row: undefined, col: undefined, }
 
-            if (dir === 'y') { 
-              subGrid.col = curID 
-              subGrid.row = i
-            } else { 
-              subGrid.row = curID 
-              subGrid.col = i
-            }
+            if (dir === 'y') { eptGrid.col = curID; eptGrid.row = i } 
+              else { eptGrid.row = curID; eptGrid.col = i }
 
-            eptTile.push(subGrid)
-          } 
+            eptTile.push(eptGrid)
+          }
         } else {
-          for (var i = start; i > end; i--) { 
-            let subGrid = {
-              row: undefined,
-              col: undefined,
-            }
+          for (var i = start; i > end; i--) {
+            let eptGrid = { row: undefined, col: undefined, }
 
-            if (dir === 'y') {
-              subGrid.col = curID
-              subGrid.row = i - 1
-            } else {
-              subGrid.row = curID
-              subGrid.col = i - 1
-            }
+            if (dir === 'y') { eptGrid.col = curID; eptGrid.row = i - 1 } 
+              else { eptGrid.row = curID; eptGrid.col = i - 1 }
 
-            eptTile.push(subGrid)
+            eptTile.push(eptGrid)
           }
         }
       }
@@ -365,13 +348,16 @@ const action = function (doc, arr, id) {
           if (nt[0][dir] < pos1) { nt[0][dir] = pos1 }
 
           // Move
-          store.outside(dir, nt[0])
+          store.moveT(dir, nt[0])
 
           // Add Up
           lead['tile'].textContent = ldNumb + ntNumb
 
           // Add Colour
           lead['tile'].style.background = `${store.colorB(ldNumb + ntNumb)}`;
+
+          // Add Animation
+          lead['tile'].classList.add('addAnime')
 
           // Remove From Array
           arr = arr.filter(each => each !== nt[0])
@@ -398,10 +384,6 @@ const action = function (doc, arr, id) {
     }
   }
 }
-
-
-// selection box
-let numbs = [2, 2, 2, 2, 2, 2, 4, 2, 2, 2]
 
 
 //  Listen for Keypress Eevent
@@ -437,28 +419,33 @@ document.addEventListener('keydown', (e) => {
       if (tile.length > 0) {
         // Get files
         let files = store.details(tile, e.keyCode)
-  
+
         // Move The Boxes
         action(files, tile, ind)
+
+        // Remove Animation Class
+        setTimeout(() => {
+          store.remAnime()
+        }, 500);
       } else {
         let arrNom = 4
         for (var i = 0; i < arrNom; i++) {
-          let subGrid = {
+          let eptGrid = {
             row: undefined,
             col: undefined
           }
           let dir = store.checkKey(e.keyCode)
 
           if (dir === 'y') {
-            subGrid.col = ind
-            subGrid.row = i
+            eptGrid.col = ind
+            eptGrid.row = i
           } else {
-            subGrid.row = ind
-            subGrid.col = i
+            eptGrid.row = ind
+            eptGrid.col = i
           }
 
-          eptTile.push(subGrid)
-          eptTile.push(subGrid)
+          eptTile.push(eptGrid)
+          eptTile.push(eptGrid)
         }
       }
     })
@@ -466,7 +453,11 @@ document.addEventListener('keydown', (e) => {
     // Create New Boxes
     if (movement !== 0) {
       setTimeout(() => {
-        store.createBox(eptTile)
+        createBox(eptTile, 1, (divs) => {
+          for(let each of divs) {
+            each.style.transform = 'scale(1)'
+          }
+        })
       }, 500);
     }
   }
@@ -474,19 +465,31 @@ document.addEventListener('keydown', (e) => {
 
 
 //  Function to begin Game
-function start(numOf) {
-  let gHead = Array.from(document.querySelectorAll('.gameTile'))
+function createBox (arr, num, callback) {
+  let divList = []
 
-  for (var i = 0; i < numOf; i++) {
+  for ( var i = 0; i < num; i++) {
+    let obj = arr[rdm(arr.length)]
+    let { row, col } = obj;
+    let arrHead = undefined
+
+    // To get row
+    if (row === 0) { arrHead = gameHead.slice(0, 4) }
+    else if (row === 1) { arrHead = gameHead.slice(4, 8) }
+    else if (row === 2) { arrHead = gameHead.slice(8, 12) }
+    else if (row === 3) { arrHead = gameHead.slice(12, 16) }
+
+
+    // To get Column
+    let parent = arrHead[col]
+
+    // Creating Div
     let div = document.createElement('div')
     div.classList.add('gameTile-jr')
     div.textContent = numbs[rdm(numbs.length)]
 
-    // Get Parent
-    let rand = rdm(gHead.length)
-
     // Append child
-    gHead[rand].appendChild(div)
+    parent.appendChild(div)
 
     // Add Colour
     div.style.background = `${store.colorB(div.textContent)}`
@@ -494,16 +497,25 @@ function start(numOf) {
     // Arrange Element
     store.locale(div)
 
-    // Filter Parent
-    gHead = gHead.filter((cur, ind) => ind !== rand)
+    // Add to array
+    divList.push(div)
+
+    // Remove the obj from the eptTile
+    arr = arr.filter(each => each !== obj)
   }
+
+  callback(divList)
 }
 
-
+// Random Numb Function
 function rdm(lgth) {
   return Math.floor(Math.random() * lgth)
 }
 
 
-// Begin Game
-start(2)
+// Start Game
+createBox(eptTile, 2, (divs) => {
+  for (let each of divs) {
+    each.style.transform = 'scale(1)'
+  }
+})
