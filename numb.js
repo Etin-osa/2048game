@@ -22,6 +22,9 @@ let movement = 0
 // Notice count
 let count = 0
 
+// Return Val
+let retCount = 0
+
 // List all keys in keypress
 const keys = [37, 38, 39, 40]
 
@@ -463,7 +466,12 @@ const action = function (doc, arr, id) {
 
 //  Listen for Keypress Eevent
 document.addEventListener('keydown', (e) => {
+  // Prevent Multiple keypress
+  retCount += 1
+  
   if (keys.indexOf(e.keyCode) !== -1) {
+    if (retCount > 1) { return }
+
     //  Game Tiles
     let tiles = Array.from(document.querySelectorAll('.gameTile-jr'))
 
@@ -523,6 +531,9 @@ document.addEventListener('keydown', (e) => {
             each.style.transform = 'scale(1)'
           }
         })
+
+        // Rect
+        retCount = 0
         
         // Check if there can't be any Move
         endGame()
@@ -530,7 +541,7 @@ document.addEventListener('keydown', (e) => {
 
       // Count Moves
       store.countMoves()
-    }
+    } else { retCount = 0 }
   }
 })
 
