@@ -1,6 +1,12 @@
 //  Get Parent Element
 const gameHead = Array.from(document.querySelectorAll('.gameTile'))
 
+// Get Dom for Moves
+const moves = document.querySelector('#move')
+
+// Get end Game
+const final = document.querySelector('.end-game')
+
 // Main Board
 let curTiles = []
 
@@ -38,8 +44,8 @@ const grid = {
 //  Box Object
 function Cajas(x, y, add, tile) {
   this.x = x,
-    this.y = y,
-    this.add = add
+  this.y = y,
+  this.add = add,
   this.tile = tile
 }
 
@@ -68,6 +74,23 @@ eptLoop()
 
 //  Function store
 const store = {
+  eachObj: function (tiles) {
+    let evry = []
+
+    for (var each of tiles) {
+      // Get x & y of tile
+      let cord = this.locale(each)
+
+      // New box
+      let box = new Cajas(cord[0], cord[1], 0, each)
+
+      // Add to evry
+      evry.push(box)
+    }
+
+    return evry
+  },
+
   locale: function (cur) {
     let node = cur.parentNode
     let nodeNumb = undefined
@@ -228,6 +251,49 @@ const store = {
     return num
   },
 
+  checkEnd: function (post, dir) {
+    let end = 0
+
+    for (var each of post) {
+      let arr = each.map(obj => obj['tile'].textContent)
+      let piece = each.map(obj => obj)
+      let actual = 0;
+
+      for (var i = 0; i < arr.length; i++) {
+        let cur = arr[actual]
+
+        if (i !== actual) {
+          if (cur === arr[i]) {
+            let curDir = piece[actual][dir]
+            let ntDir = piece[i][dir]
+
+            // Get Difference in position
+            let diff = curDir - ntDir
+
+            if (diff === 106 || diff === -106) {
+              break;
+            }
+          }
+        }
+
+        // Check for reLoop
+        if (i === 3 && actual < 3) { i = 0; actual += 1 }
+
+        // Check for endGame 
+        if (i === 3 && actual === 3) {
+          end += 1
+        }
+      }
+    }
+
+    return end
+  },
+
+  countMoves: function () {
+    let dir = parseFloat(moves.textContent)
+    moves.textContent = dir + 1
+  },
+
   checkKey: function (key) {
     if (key === keys[0] || key === keys[2]) { return 'x' }
     else if (key === keys[1] || key === keys[3]) { return 'y' }
@@ -303,6 +369,8 @@ const action = function (doc, arr, id) {
         // Re-call Function
         action(doc, arr, curID)
       } else {
+        // Getting the empty boxes
+
         let arrNom = 4
         let start = doc['end'] === 11 ? arr.length : arrNom - arr.length
         let end = doc['end'] === 11 ? 4 : 0
@@ -353,6 +421,13 @@ const action = function (doc, arr, id) {
           // Add Up
           lead['tile'].textContent = ldNumb + ntNumb
 
+          // Reduce size of element if equal or greater than 16384
+          let tileCount = parseFloat(lead['tile'].textContent)
+
+          if (tileCount >= 16384) { 
+            lead['tile'].style.fontSize = '25px'
+          }
+
           // Add Colour
           lead['tile'].style.background = `${store.colorB(ldNumb + ntNumb)}`;
 
@@ -389,27 +464,17 @@ const action = function (doc, arr, id) {
 //  Listen for Keypress Eevent
 document.addEventListener('keydown', (e) => {
   if (keys.indexOf(e.keyCode) !== -1) {
-
     //  Game Tiles
     let tiles = Array.from(document.querySelectorAll('.gameTile-jr'))
-
-    // Empty Free Array
-    eptTile = [];
 
     // Empty movement
     movement = 0
 
-    //  Get objs tiles 
-    let getTiles = tiles.map(tile => {
-      // Get x & y of tile
-      let cord = store.locale(tile)
+    // Empty Free Array
+    eptTile = [];
 
-      // New box
-      let box = new Cajas(cord[0], cord[1], 0, tile)
-
-      // Add to main Board
-      return box
-    })
+    //Get objs tiles 
+    let getTiles = store.eachObj(tiles)
 
     //  Fill rows & cols
     curTiles = store.green(getTiles, e.keyCode)
@@ -458,7 +523,13 @@ document.addEventListener('keydown', (e) => {
             each.style.transform = 'scale(1)'
           }
         })
+        
+        // Check if there can't be any Move
+        endGame()
       }, 500);
+
+      // Count Moves
+      store.countMoves()
     }
   }
 })
@@ -505,6 +576,31 @@ function createBox (arr, num, callback) {
   }
 
   callback(divList)
+}
+
+
+// Function to Check for EndGame
+function endGame() {
+  const tiles = Array.from(document.querySelectorAll('.gameTile-jr'))
+
+  // Check if all boxes are filled
+  if (tiles.length === 16) {
+    let getTiles = store.eachObj(tiles)
+
+    // Get vertical & horizontal positions
+    let vert = store.green(getTiles, keys[1])
+    let hont = store.green(getTiles, keys[0])
+
+    // Loop Vertically & Horizontally 
+    let endV = store.checkEnd(vert, 'y')
+    let endH = store.checkEnd(hont, 'x')
+
+    // Check end 
+    if (endV === 4 && endH === 4) { 
+      final.style.transition = 'opacity .3s'
+      final.style.opacity = '1'
+    }
+  }
 }
 
 // Random Numb Function
