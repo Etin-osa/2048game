@@ -119,12 +119,12 @@ body {
 
 /* Add */
 .addAnime {
-  animation: upScale .2s linear 1 backwards;
+  animation: upScale .3s linear 1 backwards;
 }
 
 
 @keyframes upScale {
   0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  40% { transform: scale(1.2); }
+  80% { transform: scale(1); }
 }
