@@ -208,17 +208,19 @@ const store = {
   },
 
   colorB: function (val) {
-    if (val == '2') { return '#CA3C25' }
-    else if (val == '4') { return '#F0C977' }
-    else if (val == '8') { return '#99A88C' }
-    else if (val == '16') { return '#2E86AB' }
-    else if (val == '32') { return '#E09F3E' }
-    else if (val == '64') { return '#9E2A2B' }
-    else if (val == '128') { return '#D0823A' }
-    else if (val == '256') { return '#791B1D' }
-    else if (val == '512') { return '#BF6535' }
-    else if (val == '1024') { return '#540B0E' }
-    else if (val == '2048') { return '#335C67' }
+    let colors = [
+      { value: '2', color: '#9538ec' }, { value: '4', color: '#fb5607' },
+      { value: '8', color: '#ef233c' }, { value: '16', color: '#023e8a' },
+      { value: '32', color: '#ffba08' }, { value: '64', color: '#1b4332' },
+      { value: '128', color: '#fdca40' }, { value: '256', color: '#1b263b' },
+      { value: '512', color: '#bf0603' }, { value: '1024', color: '#3a0ca3' },
+      { value: '2048', color: '#20bf55' }, { value: '4096', color: '#f17300' },
+      { value: '8192', color: '#822faf' }, { value: '16384', color: '#2d3142' },
+    ]
+
+    for (var i = 0; i < colors.length; i++) {
+      if (val == colors[i].value) { return colors[i].color }
+    }
   },
 
   remAnime: function() {
