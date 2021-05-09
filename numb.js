@@ -13,6 +13,9 @@ let curTiles = []
 // Free Board
 let eptTile = []
 
+// Touch Dir
+let touchDir = []
+
 // selection box
 let numbs = [2, 2, 2, 2, 2, 2, 4, 2, 2, 2]
 
@@ -474,78 +477,126 @@ document.addEventListener('keydown', (e) => {
   if (keys.indexOf(e.keyCode) !== -1) {
     if (retCount > 1) { return }
 
-    //  Game Tiles
-    let tiles = Array.from(document.querySelectorAll('.gameTile-jr'))
-
-    // Empty movement
-    movement = 0
-
-    // Empty Free Array
-    eptTile = [];
-
-    //Get objs tiles 
-    let getTiles = store.eachObj(tiles)
-
-    //  Fill rows & cols
-    curTiles = store.green(getTiles, e.keyCode)
-
-    // Movements
-    curTiles.forEach((tile, ind) => {
-      if (tile.length > 0) {
-        // Get files
-        let files = store.details(tile, e.keyCode)
-
-        // Move The Boxes
-        action(files, tile, ind)
-
-        // Remove Animation Class
-        setTimeout(() => {
-          store.remAnime()
-        }, 500);
-      } else {
-        let arrNom = 4
-        for (var i = 0; i < arrNom; i++) {
-          let eptGrid = {
-            row: undefined,
-            col: undefined
-          }
-          let dir = store.checkKey(e.keyCode)
-
-          if (dir === 'y') {
-            eptGrid.col = ind
-            eptGrid.row = i
-          } else {
-            eptGrid.row = ind
-            eptGrid.col = i
-          }
-
-          eptTile.push(eptGrid)
-          eptTile.push(eptGrid)
-        }
-      }
-    })
-
-    // Create New Boxes
-    if (movement !== 0) {
-      setTimeout(() => {
-        createBox(eptTile, 1, (divs) => {
-          for(let each of divs) {
-            each.style.transform = 'scale(1)'
-          }
-        })
-
-        // Rect
-        retCount = 0
-        
-        // Check if there can't be any Move
-        endGame()
-      }, 500);
-
-      // Count Moves
-      store.countMoves()
-    } else { retCount = 0 }
+    // Main Action
+    mainAction(e.keyCode)    
   }
 })
+
+// Listen for Touch Start
+document.addEventListener('touchstart', e => {
+  var srte = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent
+  
+  var srtouch = srte.touches[0] || srte.changedTouches[0]
+  touchDir.push({ dirX: srtouch.pageX, dirY: srtouch.pageY })
+})
+
+// Listen for Touch End
+document.addEventListener('touchend', e => {
+  var endE = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent
+
+  var entouch = endE.touches[0] || endE.changedTouches[0]
+  touchDir.push({ dirX: entouch.pageX, dirY: entouch.pageY })
+
+  let x = parseInt(touchDir[1].dirX) - parseInt(touchDir[0].dirX)
+  let y = parseInt(touchDir[1].dirY) - parseInt(touchDir[0].dirY)
+
+
+  if (x > 0 && y > 0) {
+    x > y ? mainAction(keys[2]) : mainAction(keys[3])
+
+  } else if (x < 0 && y < 0) {
+    x = parseInt(touchDir[0].dirX) - parseInt(touchDir[1].dirX)
+    y = parseInt(touchDir[0].dirY) - parseInt(touchDir[1].dirY)
+
+    x > y ? mainAction(keys[0]) : mainAction(keys[1])
+  } else {
+    if (x < 0) {
+      x = parseInt(touchDir[0].dirX) - parseInt(touchDir[1].dirX)
+      x > y ? mainAction(keys[0]) : mainAction(keys[3])
+    }
+
+    if (y < 0) {
+      y = parseInt(touchDir[0].dirY) - parseInt(touchDir[1].dirY)
+      x > y ? mainAction(keys[2]) : mainAction(keys[1])
+    }
+  }
+
+  touchDir = []
+})
+
+// Main Action Function
+function mainAction(e) {
+  //  Game Tiles
+  let tiles = Array.from(document.querySelectorAll('.gameTile-jr'))
+
+  // Empty movement
+  movement = 0
+
+  // Empty Free Array
+  eptTile = [];
+
+  //Get objs tiles 
+  let getTiles = store.eachObj(tiles)
+
+  //  Fill rows & cols
+  curTiles = store.green(getTiles, e)
+
+  // Movements
+  curTiles.forEach((tile, ind) => {
+    if (tile.length > 0) {
+      // Get files
+      let files = store.details(tile, e)
+
+      // Move The Boxes
+      action(files, tile, ind)
+
+      // Remove Animation Class
+      setTimeout(() => {
+        store.remAnime()
+      }, 500);
+    } else {
+      let arrNom = 4
+      for (var i = 0; i < arrNom; i++) {
+        let eptGrid = {
+          row: undefined,
+          col: undefined
+        }
+        let dir = store.checkKey(e)
+
+        if (dir === 'y') {
+          eptGrid.col = ind
+          eptGrid.row = i
+        } else {
+          eptGrid.row = ind
+          eptGrid.col = i
+        }
+
+        eptTile.push(eptGrid)
+        eptTile.push(eptGrid)
+      }
+    }
+  })
+
+  // Create New Boxes
+  if (movement !== 0) {
+    setTimeout(() => {
+      createBox(eptTile, 1, (divs) => {
+        for (let each of divs) {
+          each.style.transform = 'scale(1)'
+        }
+      })
+
+      // Rect
+      retCount = 0
+
+      // Check if there can't be any Move
+      endGame()
+    }, 500);
+
+    // Count Moves
+    store.countMoves()
+  } else { retCount = 0 }
+}
 
 
 //  Function to begin Game
