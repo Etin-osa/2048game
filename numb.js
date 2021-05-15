@@ -484,44 +484,37 @@ document.addEventListener('keydown', (e) => {
 
 // Listen for Touch Start
 document.addEventListener('touchstart', e => {
-  var srte = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent
-  
-  var srtouch = srte.touches[0] || srte.changedTouches[0]
-  touchDir.push({ dirX: srtouch.pageX, dirY: srtouch.pageY })
+  // Check TouchDir
+  if (touchDir.length >= 1) { 
+    touchDir = [] 
+    return
+  } else {
+    var srte = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent
+
+    var srtouch = srte.touches[0] || srte.changedTouches[0]
+    touchDir.push({ pageX: srtouch.pageX, pageY: srtouch.pageY })
+  }
 })
 
 // Listen for Touch End
 document.addEventListener('touchend', e => {
-  var endE = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent
+  if (touchDir.length === 1) {
+    var endE = (typeof e.originalEvent === 'undefined') ? e : e.originalEvent
+    var endTouch = endE.touches[0] || endE.changedTouches[0]
+    let beginTouch = touchDir[0]
 
-  var entouch = endE.touches[0] || endE.changedTouches[0]
-  touchDir.push({ dirX: entouch.pageX, dirY: entouch.pageY })
+    // Set Direction
+    let x = endTouch.pageX > beginTouch.pageX ? 
+      { dir: endTouch.pageX - beginTouch.pageX, nav: keys[2] } : { dir: beginTouch.pageX - endTouch.pageX, nav: keys[0] };
 
-  let x = parseInt(touchDir[1].dirX) - parseInt(touchDir[0].dirX)
-  let y = parseInt(touchDir[1].dirY) - parseInt(touchDir[0].dirY)
+    let y = endTouch.pageY > beginTouch.pageY ? 
+      { dir: endTouch.pageY - beginTouch.pageY, nav: keys[3] } : { dir: beginTouch.pageY - endTouch.pageY, nav: keys[1] };
 
-
-  if (x > 0 && y > 0) {
-    x > y ? mainAction(keys[2]) : mainAction(keys[3])
-
-  } else if (x < 0 && y < 0) {
-    x = parseInt(touchDir[0].dirX) - parseInt(touchDir[1].dirX)
-    y = parseInt(touchDir[0].dirY) - parseInt(touchDir[1].dirY)
-
-    x > y ? mainAction(keys[0]) : mainAction(keys[1])
-  } else {
-    if (x < 0) {
-      x = parseInt(touchDir[0].dirX) - parseInt(touchDir[1].dirX)
-      x > y ? mainAction(keys[0]) : mainAction(keys[3])
-    }
-
-    if (y < 0) {
-      y = parseInt(touchDir[0].dirY) - parseInt(touchDir[1].dirY)
-      x > y ? mainAction(keys[2]) : mainAction(keys[1])
-    }
+    
+    // Call Function
+    if (x.dir === y.dir ) return 
+    x.dir > y.dir ? mainAction(x.nav) : mainAction(y.nav);
   }
-
-  touchDir = []
 })
 
 // Main Action Function
@@ -589,13 +582,21 @@ function mainAction(e) {
       // Rect
       retCount = 0
 
+      // Touch
+      touchDir = []
+
       // Check if there can't be any Move
       endGame()
     }, 500);
 
     // Count Moves
     store.countMoves()
-  } else { retCount = 0 }
+  } else { 
+    retCount = 0 
+
+    // Touch
+    touchDir = []
+  }
 }
 
 
